@@ -805,12 +805,22 @@ function uploadBadgeList(
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
 
-    function withdrawUnallocated(uint256 amount) external onlyOwner {
-        require(address(token) != address(0), "Token not set");
-        uint256 balance = token.balanceOf(address(this));
-        require(balance >= amount, "Insufficient token balance");
-        token.safeTransfer(msg.sender, amount);
+  function withdrawUnallocated(uint256 amount) external onlyOwner {
+    require(address(token) != address(0), "Token not set");
+    uint256 balance = token.balanceOf(address(this));
+
+    uint256 reserved = 0;
+    if (totalAllocated > totalClaimed) {
+        reserved = totalAllocated.sub(totalClaimed);
     }
+
+    require(balance > reserved, "No unallocated tokens");
+    uint256 available = balance.sub(reserved);
+    require(amount <= available, "Amount exceeds unallocated balance");
+
+    token.safeTransfer(msg.sender, amount);
+}
+
 
     function getVestingStatus() public view returns (bool) {
         return vestingStarted;
